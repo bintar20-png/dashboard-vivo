@@ -1,239 +1,125 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VIVO Banyuwangi Live Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    margin: 0;
-    min-height: 100vh;
-    color: white;
-  }
-  .glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  .vivo-gold {
-    color: #FFD700;
-  }
-  .pulse-glow {
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); }
-    50% { box-shadow: 0 0 40px rgba(255,215,0,0.8); }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard VIVO - Google Sign-In</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+      margin: 0; padding: 2rem;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .glass {
+      background: rgba(255 255 255 / 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
 
-<header class="glass sticky top-0 z-50 p-4 max-w-7xl mx-auto flex justify-between items-center mb-8">
-  <div class="flex items-center space-x-3">
-    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center pulse-glow">
-      <i class="fas fa-mobile-alt text-2xl vivo-gold"></i>
-    </div>
-    <div>
-      <h1 class="text-white font-bold text-2xl bg-gradient-to-r from-white to-yellow-400 bg-clip-text text-transparent">VIVO Banyuwangi</h1>
-      <p class="text-sm opacity-80">Live Dashboard</p>
-    </div>
+  <h1 class="text-3xl font-bold mb-8">Dashboard VIVO Banyuwangi</h1>
+
+  <!-- Google sign-in button -->
+  <div id="g_id_onload"
+    data-client_id="YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com"
+    data-context="signin"
+    data-ux_mode="popup"
+    data-callback="handleCredentialResponse"
+    data-auto_prompt="false">
   </div>
-  <div id="userProfile" class="hidden text-right">
-    <div id="userName" class="font-semibold"></div>
-    <div id="userLevel" class="text-xs opacity-70"></div>
+  <div class="g_id_signin" data-type="standard"></div>
+
+  <div id="loading" class="glass hidden text-center">
+    <i class="fas fa-spinner fa-spin text-yellow-400 text-4xl mb-2"></i>
+    <p>Memuat dashboard...</p>
   </div>
-</header>
 
-<!-- Login Modal -->
-<div id="loginModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-  <div class="glass p-8 max-w-md w-full rounded-3xl">
-    <h2 class="text-3xl font-extrabold text-center mb-6 vivo-gold">Login Dashboard</h2>
-    <form id="loginForm" class="space-y-6">
-      <input type="text" id="employeeId" autocomplete="off" placeholder="Masukkan ID Pegawai (Contoh: IDN002707)" 
-        class="w-full px-5 py-3 rounded-xl bg-white/10 placeholder-white/50 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400" required />
-      <button type="submit" class="w-full px-4 py-3 text-gray-900 font-bold rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 transition">Masuk</button>
-    </form>
-    <p class="mt-4 text-center text-xs opacity-60">Gunakan ID dari daftar User Access</p>
-  </div>
-</div>
+  <main id="dashboard" class="glass hidden">
+    <p><strong>Nama:</strong> <span id="userName"></span></p>
+    <p><strong>Level:</strong> <span id="userLevel"></span></p>
+    <p><strong>Area:</strong> <span id="userArea"></span></p>
+    <button id="signOutBtn" class="mt-4 bg-yellow-400 text-black px-4 py-2 rounded">Logout</button>
+  </main>
 
-<!-- Dashboard content -->
-<main id="dashboardContent" class="max-w-7xl mx-auto px-4 pb-24 hidden">
-  
-  <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-    <div id="achievementCard" class="glass p-8 rounded-3xl flex flex-col items-center">
-      <i class="fas fa-trophy text-yellow-400 text-4xl mb-3"></i>
-      <div id="achievementVal" class="text-5xl font-bold">--%</div>
-      <div class="opacity-80 mt-1">Achievement</div>
-    </div>
-    <div id="unitsCard" class="glass p-8 rounded-3xl flex flex-col items-center">
-      <i class="fas fa-boxes text-blue-400 text-4xl mb-3"></i>
-      <div id="unitsVal" class="text-5xl font-bold">--</div>
-      <div class="opacity-80 mt-1">Unit Terjual</div>
-    </div>
-    <div id="revenueCard" class="glass p-8 rounded-3xl flex flex-col items-center">
-      <i class="fas fa-coins text-purple-400 text-4xl mb-3"></i>
-      <div id="revenueVal" class="text-5xl font-bold">Rp --</div>
-      <div class="opacity-80 mt-1">Revenue</div>
-    </div>
-    <div id="topStoreCard" class="glass p-8 rounded-3xl flex flex-col items-center">
-      <i class="fas fa-store text-orange-400 text-4xl mb-3"></i>
-      <div id="topStoreVal" class="text-3xl font-bold">--</div>
-      <div class="opacity-80 mt-1">Top Store</div>
-    </div>
-  </section>
+  <script>
 
-  <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbw8Qqwz0BDtkY3x9asjpzjFqkUrc4EqA7-LhIu7Vj1jZ-pccMzQrLD7Kv9aXlCPeCS4/exec';
 
-    <div class="glass p-8 rounded-3xl lg:col-span-2">
-      <h3 class="text-xl font-bold mb-6 flex items-center">
-        <i class="fas fa-chart-pie mr-3 text-yellow-400"></i>Persentase Achievement
-      </h3>
-      <canvas id="achievementChart" height="200"></canvas>
-    </div>
+    let currentUser = null;
 
-    <div class="glass p-8 rounded-3xl">
-      <h3 class="text-xl font-bold mb-6 flex items-center">
-        <i class="fas fa-mobile-alt mr-3 text-yellow-400"></i>Top Produk
-      </h3>
-      <ul id="topProductsList" class="list-disc list-inside space-y-2 text-lg"></ul>
-    </div>
-  </section>
-
-  <section id="levelContent" class="glass p-8 rounded-3xl min-h-[180px]">
-    <!-- Isi dinamis sesuai level -->
-  </section>
-</main>
-
-<script>
-  // Ganti URL ini dengan URL Web App google apps script Anda setelah deploy
-  const API_BASE = 'https://script.google.com/macros/s/AKfycbw8Qqwz0BDtkY3x9asjpzjFqkUrc4EqA7-LhIu7Vj1jZ-pccMzQrLD7Kv9aXlCPeCS4/exec';
-
-  const loginModal = document.getElementById('loginModal');
-  const dashboardContent = document.getElementById('dashboardContent');
-  const userProfile = document.getElementById('userProfile');
-  const userNameElem = document.getElementById('userName');
-  const userLevelElem = document.getElementById('userLevel');
-
-  const achievementVal = document.getElementById('achievementVal');
-  const unitsVal = document.getElementById('unitsVal');
-  const revenueVal = document.getElementById('revenueVal');
-  const topStoreVal = document.getElementById('topStoreVal');
-  const topProductsList = document.getElementById('topProductsList');
-  const levelContent = document.getElementById('levelContent');
-  const achievementChartCtx = document.getElementById('achievementChart').getContext('2d');
-  let achievementChart = null;
-
-  document.getElementById('loginForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const id = document.getElementById('employeeId').value.trim();
-    if (!id) return alert('Masukkan ID Pegawai Anda');
-
-    try {
-      // Fetch data user with login id
-      const res = await fetch(`${API_BASE}?action=login&id=${encodeURIComponent(id)}`);
-      const userData = await res.json();
-
-      if (!userData || userData.error || !userData.success) {
-        return alert('ID tidak ditemukan. Periksa dan coba lagi.');
+    function handleCredentialResponse(response) {
+      if (!response.credential) {
+        alert('Login gagal');
+        return;
       }
+      document.querySelector('.g_id_signin').style.display = 'none';
+      document.getElementById('loading').classList.remove('hidden');
 
-      // Update UI
-      loginModal.style.display = 'none';
-      dashboardContent.style.display = 'block';
-      userProfile.style.display = 'block';
+      const payload = parseJwt(response.credential);
+      // Gunakan email dari payload sebagai ID user
+      const userId = payload.email;
 
-      userNameElem.textContent = userData.name;
-      userLevelElem.textContent = `Level: ${userData.level}`;
-
-      achievementVal.textContent = `${userData.achievement}%`;
-      unitsVal.textContent = userData.units_sold;
-      revenueVal.textContent = formatRupiah(userData.revenue);
-      topStoreVal.textContent = userData.top_store || '-';
-
-      // Top Products list
-      topProductsList.innerHTML = '';
-      if (userData.top_product) {
-        const li = document.createElement('li');
-        li.textContent = userData.top_product;
-        topProductsList.appendChild(li);
-      } else {
-        topProductsList.innerHTML = '<li>-</li>';
-      }
-
-      renderLevelContent(userData.level, userData);
-
-      renderAchievementChart(userData.achievement);
-
-    } catch (err) {
-      alert('Kesalahan jaringan atau server. Coba refresh halaman dan coba kembali.');
-      console.error(err);
+      fetchUserData(userId, response.credential);
     }
-  });
 
-  function renderLevelContent(level, user) {
-    // Bersihkan konten dulu
-    levelContent.innerHTML = '';
-    if (level.toLowerCase().includes('promotor') || level.toLowerCase().includes('mitra')) {
-      levelContent.innerHTML = `
-        <h4 class="text-xl font-semibold mb-4">Pencapaian Individu</h4>
-        <p>Target unit diperkirakan: 30 unit</p>
-        <p>Unit terjual: ${user.units_sold}</p>
-        <p>Realisasi revenue: ${formatRupiah(user.revenue)}</p>
-      `;
-    } else if (level.toLowerCase().includes('sator')) {
-      levelContent.innerHTML = `
-        <h4 class="text-xl font-semibold mb-4">Monitoring Area dan Tim</h4>
-        <p>Area: ${user.area}</p>
-        <p>Total unit terjual oleh tim: data real-time nanti</p>
-        <p>Achievement tim: data real-time nanti</p>
-      `;
-    } else if (level.toLowerCase().includes('manager')) {
-      levelContent.innerHTML = `
-        <h4 class="text-xl font-semibold mb-4">Overview Manager</h4>
-        <p>Memantau pencapaian seluruh area secara keseluruhan</p>
-        <p>Data lengkap dan grafik besar</p>
-      `;
-    } else {
-      levelContent.innerHTML = `<p>Level tidak dikenali</p>`;
-    }
-  }
-
-  function renderAchievementChart(achievement) {
-    if (achievementChart) achievementChart.destroy();
-    achievementChart = new Chart(achievementChartCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Achievement', 'Sisa Target'],
-        datasets: [{
-          data: [achievement, 100 - achievement],
-          backgroundColor: ['#FFD700', '#6B7280'],
-          borderWidth: 0,
-          circumference: 180,
-          rotation: 270
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
+    async function fetchUserData(userId, idToken) {
+      try {
+        const url = `${API_BASE}?action=login&id=${encodeURIComponent(userId)}&idToken=${encodeURIComponent(idToken)}`;
+        const res = await fetch(url, {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('Error: ' + data.error);
+          google.accounts.id.revoke(userId, () => location.reload());
+          return;
         }
+        currentUser = data.user;
+        showDashboard();
+      } catch(e) {
+        alert('Kesalahan jaringan: ' + e.message);
+        location.reload();
       }
-    });
-  }
+    }
 
-  function formatRupiah(angka) {
-    return angka.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
-  }
-</script>
+    function showDashboard() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userLevel').textContent = currentUser.level;
+      document.getElementById('userArea').textContent = currentUser.area;
+    }
 
+    function parseJwt (token) {
+      var base64Url = token.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    document.getElementById('signOutBtn').onclick = () => {
+      google.accounts.id.disableAutoSelect();
+      currentUser = null;
+      document.getElementById('dashboard').classList.add('hidden');
+      document.querySelector('.g_id_signin').style.display = 'block';
+    };
+
+  </script>
 </body>
 </html>
